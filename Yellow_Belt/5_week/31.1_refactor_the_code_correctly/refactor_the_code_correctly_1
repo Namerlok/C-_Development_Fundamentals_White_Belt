@@ -1,0 +1,84 @@
+//============================================================================
+// checking my fellow student's code, part 1
+//============================================================================
+
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+class Person {
+protected:
+    Person(const string& name, const string& occupation) :
+        _name(name), _occupation(occupation) {}
+    string Info() const {
+        return (_occupation + ": " + _name);
+    }
+public:
+    virtual void Walk(const string& destination) const {
+        cout << Info() << " walks to: " << destination << endl;
+    }
+
+public:
+    const string _name;
+    const string _occupation; // род деятельности человека - студент, преподаватель, полицейский и т.п.
+};
+
+class Student : public Person {
+public:
+    Student(const string& name, const string& favourite_song) :
+        Person(name, "Student"), _favourite_song(favourite_song) {}
+    void Learn() const {
+        cout << Info() << " learns" << endl;
+    }
+    void SingSong() const {
+        cout << Info() << " sings a song: " << _favourite_song << endl;
+    }
+    virtual void Walk(const string& destination) const override {
+        cout << Info() << " walks to: " << destination << endl;
+        SingSong();
+    }
+
+private:
+    const string _favourite_song;
+};
+
+class Teacher : public Person {
+public:
+    Teacher(const string& name, const string& subject) : Person(name, "Teacher"), _subject(subject) {}
+    void Teach() const {
+        cout << Info() << " teaches: " << _subject << endl;
+    }
+
+private:
+    const string _subject;
+};
+
+class Policeman : public Person {
+public:
+    Policeman(const string& name) : Person(name, "Policeman") {}
+    void Check(const Person& person) {
+        cout << Info() << " checks " << person._occupation << ". " <<
+            person._occupation << "\'s name is: " << person._name << endl;
+    }
+};
+
+void VisitPlaces(const Person& person, const vector<string>& places) {
+    for (const auto& place : places) {
+        person.Walk(place);
+    }
+}
+
+
+int main() {
+    Teacher t("Jim", "Math");
+    Student s("Ann", "We will rock you");
+    Policeman p("Bob");
+
+    VisitPlaces(t, { "Moscow", "London" });
+    p.Check(s);
+    VisitPlaces(s, { "Moscow", "London" });
+    return 0;
+}
+
