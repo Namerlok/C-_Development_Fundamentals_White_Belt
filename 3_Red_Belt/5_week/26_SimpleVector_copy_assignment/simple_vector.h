@@ -10,7 +10,7 @@ public:
     explicit SimpleVector(size_t size);
     ~SimpleVector();
 
-    SimpleVector<T>& operator=(const SimpleVector<T>& vec);
+    const SimpleVector<T>& operator=(const SimpleVector<T>& vec);
     T& operator[](size_t index);
     T at(size_t index) const;
 
@@ -43,7 +43,7 @@ SimpleVector<T>::SimpleVector(const SimpleVector& vec) :
 }
 
 template <typename T>
-SimpleVector<T>& SimpleVector<T>::operator=(const SimpleVector& vec) {
+const SimpleVector<T>& SimpleVector<T>::operator=(const SimpleVector& vec) {
     size = vec.Size();
     capacity = vec.Capacity();
     if (data != nullptr)
@@ -51,12 +51,13 @@ SimpleVector<T>& SimpleVector<T>::operator=(const SimpleVector& vec) {
     data = new T[size];
     for (size_t i = 0; i < size; ++i)
         data[i] = vec.at(i);
-    return *this;
+    return vec;
 }
 
 template <typename T>
 SimpleVector<T>::~SimpleVector() {
-    delete[] data;
+    if (data != nullptr)
+        delete[] data;
 }
 
 template <typename T>
