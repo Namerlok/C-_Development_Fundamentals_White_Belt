@@ -27,3 +27,9 @@ template <typename Container>
 auto Head(Container& c, int top) {
     return IteratorRange(begin(c), begin(c) + std::min<size_t>(std::max(top, 0), c.size()));
 }
+
+template <typename Container>
+auto Segment(Container& c, int beg_pos, int top) {
+    return IteratorRange(begin(c) + std::min<size_t>(std::max(beg_pos, 0), c.size() - std::max(beg_pos, 0)),
+                         begin(c) + std::min<size_t>(std::max(top, 0), c.size()) - std::max(beg_pos, 0));
+}

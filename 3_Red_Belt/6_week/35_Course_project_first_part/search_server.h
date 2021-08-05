@@ -1,5 +1,7 @@
 #pragma once
 
+#include "synchronized.h"
+
 #include <istream>
 #include <ostream>
 #include <list>
@@ -7,19 +9,26 @@
 #include <map>
 #include <unordered_map>
 #include <string>
+#include <future>
+
+const size_t MAX_SIZE_OF_DOCUMENT = 50000;
+const size_t MAX_THREAD_OF_HARDWARE = std::thread::hardware_concurrency();
 
 class InvertedIndex {
 public:
-    void Add(const std::string& document);
-    std::list<size_t> Lookup(const std::string& word) const;
-
-    const std::string& GetDocument(size_t id) const {
-        return docs[id];
+    using doc_id = size_t;
+    using count_doc_id = size_t;
+    InvertedIndex() = default;
+    InvertedIndex(std::istream& document_input);
+    std::unordered_map<doc_id, count_doc_id> Lookup(const std::string& word) const;
+    size_t GetIdCount() const {
+        return id_count;
     }
 
 private:
-    std::unordered_map<std::string, std::list<size_t>> index;
-    std::vector<std::string> docs;
+    std::unordered_map<std::string,
+                       std::unordered_map<doc_id, count_doc_id>> index;
+    size_t id_count = 0;
 };
 
 class SearchServer {
@@ -31,5 +40,7 @@ public:
                           std::ostream& search_results_output);
 
 private:
-    InvertedIndex index;
+    Synchronized<InvertedIndex> index_serv;
+//    InvertedIndex index;
+    std::vector<std::future<void>> futures;
 };

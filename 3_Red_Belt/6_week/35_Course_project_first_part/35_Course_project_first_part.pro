@@ -18,6 +18,7 @@ HEADERS +=              \
     parse.h             \
     profile.h \
     search_server.h     \
+    synchronized.h \
     test_runner.h \
     timer.h
 

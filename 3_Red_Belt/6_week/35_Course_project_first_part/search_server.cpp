@@ -10,12 +10,12 @@
 #include <numeric>
 #include <future>
 
-const size_t MAX_SIZE_OF_DOCUMENT = 50000;
-
 std::vector<std::string> SplitIntoWords(const std::string& line) {
     std::istringstream words_input(line);
-    return {std::make_move_iterator(std::istream_iterator<std::string>(words_input)),
-            std::make_move_iterator(std::istream_iterator<std::string>())};
+    std::vector<std::string> result =
+        {std::make_move_iterator(std::istream_iterator<std::string>(words_input)),
+         std::make_move_iterator(std::istream_iterator<std::string>())};
+    return result;
 }
 
 SearchServer::SearchServer(std::istream& document_input) {
@@ -23,31 +23,28 @@ SearchServer::SearchServer(std::istream& document_input) {
 }
 
 void SearchServer::UpdateDocumentBase(std::istream& document_input) {
-    InvertedIndex new_index;
-
-    for (std::string current_document; getline(document_input, current_document); ) {
-        new_index.Add(move(current_document));
-    }
-
-    index = std::move(new_index);
+    InvertedIndex new_index(document_input);
+    index_serv.GetAccess().ref_to_value = std::move(new_index);
 }
 
 void SearchServer::AddQueriesStream(std::istream& query_input,
                                     std::ostream& search_results_output) {
-    std::vector<size_t> docid_count(MAX_SIZE_OF_DOCUMENT);
-    std::vector<size_t> ids(docid_count.size());
+    std::vector<size_t> docid_count;
+    std::vector<size_t> ids;
     std::string current_query;
     while (getline(query_input, current_query)) {
-        std::fill(docid_count.begin(), docid_count.end(), 0);
+        auto access = index_serv.GetAccess();
+        docid_count.assign(access.ref_to_value.GetIdCount(), 0);
+        ids.resize(access.ref_to_value.GetIdCount());
+        //std::fill(docid_count.begin(), docid_count.end(), 0);
         const auto words = SplitIntoWords(current_query);
         for (const auto& word: words) {
-            for (const size_t& docid: index.Lookup(word)) {
-                ++(docid_count[docid]);
+            for (const auto& t: access.ref_to_value.Lookup(word)) {
+                docid_count[t.first] += t.second;
             }
         }
 
         std::iota(ids.begin(), ids.end(), 0);
-
         std::partial_sort(
             std::begin(ids),
             Head(ids, 5).end(),
@@ -74,19 +71,28 @@ void SearchServer::AddQueriesStream(std::istream& query_input,
     }
 }
 
-void InvertedIndex::Add(const std::string& document) {
-    docs.push_back(document);
+InvertedIndex::InvertedIndex(std::istream& document_input) {
+//    index.reserve(15000);
 
-    const size_t docid = docs.size() - 1;
-    for (const auto& word : SplitIntoWords(document)) {
-        index[word].push_back(docid);
+    std::string line;
+    while(std::getline(document_input, line)){
+        for (const std::string& word: SplitIntoWords(line)) {
+            auto& id_to_count = index[std::move(word)];
+            if (!id_to_count.empty() && id_to_count.count(id_count)) {
+                ++id_to_count[id_count];
+            } else {
+                id_to_count[id_count] = 1;
+            }
+        }
+        ++id_count;
     }
 }
 
-std::list<size_t> InvertedIndex::Lookup(const std::string& word) const {
+std::unordered_map<size_t, size_t> InvertedIndex::Lookup(const std::string& word) const {
     if (auto it = index.find(word); it != index.end()) {
         return it->second;
     } else {
         return {};
     }
 }
+
