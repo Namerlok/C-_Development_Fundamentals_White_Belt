@@ -20,6 +20,11 @@ public:
         return {value, mutex};
     }
 
+    Access GetAccess() const {
+        //return Access(value, std::lock_guard(mutex));
+        return {value, mutex};
+    }
+
 private:
     T value;
     std::mutex mutex;
